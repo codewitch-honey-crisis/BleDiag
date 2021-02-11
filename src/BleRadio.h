@@ -204,14 +204,22 @@ class BleRadio :
     /** Notification / Indication receiving handler callback */
     static void onSNotify(NimBLERemoteCharacteristic *pRemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify)
     {
+        NimBLERemoteService* pSvc = pRemoteCharacteristic->getRemoteService();
+        if(pRemoteCharacteristic->getUUID()==NimBLEUUID(BLE_CONFIGURATION_SERVICE_CHAR_ID)) {
+            std::string val = pRemoteCharacteristic->getValue();
+            if(1==val.length() && val.data()[0]==0) {
+                Serial.println(F("BLE Keep-alive ping from configuration service"));
+                return;
+            }
+        }
         if(isNotify) {
             Serial.print(F("BLE Notification from "));
         } else {
             Serial.print(F("BLE Indication from "));
         }
-        Serial.print(std::string(pRemoteCharacteristic->getRemoteService()->getClient()->getPeerAddress()).c_str());
+        Serial.print(std::string(pSvc->getClient()->getPeerAddress()).c_str());
         Serial.print(F(": Service = "));
-        Serial.print(std::string(pRemoteCharacteristic->getRemoteService()->getUUID()).c_str());
+        Serial.print(std::string(pSvc->getUUID()).c_str());
         Serial.print(F(", Characteristic = "));
         Serial.print(std::string(pRemoteCharacteristic->getUUID()).c_str());
         Serial.print(F(", Value = "));
