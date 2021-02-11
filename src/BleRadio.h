@@ -20,11 +20,11 @@ class BleRadio :
     uint32_t m_notifyTS;
     void onResult(NimBLEAdvertisedDevice *advertisedDevice)
     {
-        Serial.print("Advertised Application found: ");
+        Serial.print(F("BLE Advertised Device found: "));
         Serial.println(advertisedDevice->toString().c_str());
         if (advertisedDevice->isAdvertisingService(NimBLEUUID(BLE_CONFIGURATION_SERVICE_ID)))
         {
-            Serial.println("Found Configuration Service");
+            Serial.println(F("BLE Found Configuration Service"));
             /** stop scan before connecting */
             NimBLEDevice::getScan()->stop();
             /** Save the device reference in a global for the client to use*/
@@ -35,7 +35,7 @@ class BleRadio :
     }
     void onConnect(NimBLEClient *pClient)
     {
-        Serial.println("Connected");
+        Serial.println(F("BLE Connected"));
         /** After connection we should change the parameters if we don't need fast response times.
          *  These settings are 150ms interval, 0 latency, 450ms timout.
          *  Timeout should be a multiple of the interval, minimum is 100ms.
@@ -48,7 +48,7 @@ class BleRadio :
     void onDisconnect(NimBLEClient *pClient)
     {
         Serial.print(pClient->getPeerAddress().toString().c_str());
-        Serial.println(" Disconnected - Starting scan");
+        Serial.println(F("BLE  Disconnected - Starting scan"));
         NimBLEDevice::getScan()->start(m_scanTime, onScanEnded);
     }
 
@@ -81,8 +81,8 @@ class BleRadio :
 
     void onConnect(NimBLEServer *pServer)
     {
-        Serial.println("Client connected");
-        Serial.println("Multi-connect support: start advertising");
+        Serial.println(F("BLE Client connected"));
+        Serial.println(F("BLE Multi-connect support: start advertising"));
         NimBLEDevice::startAdvertising();
     };
     /** Alternative onConnect() method to extract details of the connection. 
@@ -90,7 +90,7 @@ class BleRadio :
      */
     void onConnect(NimBLEServer *pServer, ble_gap_conn_desc *desc)
     {
-        Serial.print("Client address: ");
+        Serial.print(F("BLE Client address: "));
         Serial.println(NimBLEAddress(desc->peer_ota_addr).toString().c_str());
         /** We can use the connection handle here to ask for different connection parameters.
          *  Args: connection handle, min connection interval, max connection interval
@@ -103,7 +103,7 @@ class BleRadio :
     };
     void onDisconnect(NimBLEServer *pServer)
     {
-        Serial.println("Client disconnected - start advertising");
+        Serial.println(F("BLE Client disconnected - start advertising"));
         NimBLEDevice::startAdvertising();
     };
 
@@ -115,14 +115,14 @@ class BleRadio :
             if (!desc->sec_state.encrypted)
             {
                 NimBLEDevice::getServer()->disconnect(desc->conn_handle);
-                Serial.println("Encrypt connection failed - disconnecting client");
+                Serial.println(F("BLE Encrypt connection failed - disconnecting client"));
                 return;
             }
-            Serial.println("Starting BLE work!");
+            Serial.println(F("BLE Starting BLE work!"));
         } else {
             if (!desc->sec_state.encrypted)
             {
-                Serial.println("Encrypt connection failed - disconnecting");
+                Serial.println(F("BLE Encrypt connection failed - disconnecting"));
                 /** Find the client with the connection handle provided in desc */
                 NimBLEDevice::getClientByID(desc->conn_handle)->disconnect();
                 return;
@@ -132,14 +132,15 @@ class BleRadio :
     void onRead(NimBLECharacteristic *pCharacteristic)
     {
         Serial.print(pCharacteristic->getUUID().toString().c_str());
-        Serial.print(": onRead(), value: ");
+        Serial.print(F("BLE : onRead(), value: "));
         Serial.println(pCharacteristic->getValue().c_str());
     };
 
     void onWrite(NimBLECharacteristic *pCharacteristic)
     {
+        Serial.print(F("BLE "));
         Serial.print(pCharacteristic->getUUID().toString().c_str());
-        Serial.print(": onWrite(), value: ");
+        Serial.print(F(": onWrite(), value: "));
         Serial.println(pCharacteristic->getValue().c_str());
     };
     /** Called before notification or indication is sent, 
@@ -147,7 +148,7 @@ class BleRadio :
      */
     void onNotify(NimBLECharacteristic *pCharacteristic)
     {
-        Serial.println("Sending notification to clients");
+        Serial.println(F("BLE Sending notification to clients"));
     };
 
     /** The status returned in status is defined in NimBLECharacteristic.h.
@@ -155,71 +156,72 @@ class BleRadio :
      */
     void onStatus(NimBLECharacteristic *pCharacteristic, Status status, int code)
     {
-        String str = ("Notification/Indication status code: ");
-        str += status;
-        str += ", return code: ";
-        str += code;
-        str += ", ";
-        str += NimBLEUtils::returnCodeToString(code);
-        Serial.println(str);
+        Serial.print(F("BLE Notification/Indication status code: "));
+        Serial.print(status);
+        Serial.print(F(", return code: "));
+        Serial.print(code);
+        Serial.print(F(", "));
+        Serial.println(NimBLEUtils::returnCodeToString(code));
     };
 
     void onSubscribe(NimBLECharacteristic *pCharacteristic, ble_gap_conn_desc *desc, uint16_t subValue)
     {
-        String str = "Client ID: ";
-        str += desc->conn_handle;
-        str += " Address: ";
-        str += std::string(NimBLEAddress(desc->peer_ota_addr)).c_str();
+        Serial.print(F("Client ID: "));
+        Serial.print(desc->conn_handle);
+        Serial.print(F(" Address: "));
+        Serial.print(std::string(NimBLEAddress(desc->peer_ota_addr)).c_str());
         if (subValue == 0)
         {
-            str += " Unsubscribed to ";
+            Serial.print(F(" Unsubscribed to "));
         }
         else if (subValue == 1)
         {
-            str += " Subscribed to notfications for ";
+            Serial.print(F(" Subscribed to notfications for "));
         }
         else if (subValue == 2)
         {
-            str += " Subscribed to indications for ";
+            Serial.print(F(" Subscribed to indications for "));
         }
         else if (subValue == 3)
         {
-            str += " Subscribed to notifications and indications for ";
+            Serial.print(F(" Subscribed to notifications and indications for "));
         }
-        str += std::string(pCharacteristic->getUUID()).c_str();
-
-        Serial.println(str);
+        Serial.println(std::string(pCharacteristic->getUUID()).c_str());
     };
     void onWrite(NimBLEDescriptor *pDescriptor)
     {
         std::string dscVal((char *)pDescriptor->getValue(), pDescriptor->getLength());
-        Serial.print("Descriptor witten value:");
+        Serial.print(F("BLE Descriptor witten value:"));
         Serial.println(dscVal.c_str());
     };
 
     void onRead(NimBLEDescriptor *pDescriptor)
     {
         Serial.print(pDescriptor->getUUID().toString().c_str());
-        Serial.println(" Descriptor read");
+        Serial.println(F("BLE  Descriptor read"));
     };
 
     /** Notification / Indication receiving handler callback */
     static void onSNotify(NimBLERemoteCharacteristic *pRemoteCharacteristic, uint8_t *pData, size_t length, bool isNotify)
     {
-        std::string str = (isNotify == true) ? "Notification" : "Indication";
-        str += " from ";
-        /** NimBLEAddress and NimBLEUUID have std::string operators */
-        str += std::string(pRemoteCharacteristic->getRemoteService()->getClient()->getPeerAddress());
-        str += ": Service = " + std::string(pRemoteCharacteristic->getRemoteService()->getUUID());
-        str += ", Characteristic = " + std::string(pRemoteCharacteristic->getUUID());
-        str += ", Value = " + std::string((char *)pData, length);
-        Serial.println(str.c_str());
+        if(isNotify) {
+            Serial.print(F("BLE Notification from "));
+        } else {
+            Serial.print(F("BLE Indication from "));
+        }
+        Serial.print(std::string(pRemoteCharacteristic->getRemoteService()->getClient()->getPeerAddress()).c_str());
+        Serial.print(F(": Service = "));
+        Serial.print(std::string(pRemoteCharacteristic->getRemoteService()->getUUID()).c_str());
+        Serial.print(F(", Characteristic = "));
+        Serial.print(std::string(pRemoteCharacteristic->getUUID()).c_str());
+        Serial.print(F(", Value = "));
+        Serial.println(std::string((char *)pData, length).c_str());
     }
 
     /** Callback to process the results of the last scan or restart it */
     static void onScanEnded(NimBLEScanResults results)
     {
-        Serial.println("Scan Ended");
+        Serial.println(F("BLE Scan Ended"));
     }
     /** Handles the provisioning of clients and connects / interfaces with the server */
     bool connectToServer()
@@ -238,10 +240,10 @@ class BleRadio :
             {
                 if (!pClient->connect(m_advDevice, false))
                 {
-                    Serial.println("Reconnect failed");
+                    Serial.println(F("BLE Reconnect failed"));
                     return false;
                 }
-                Serial.println("Reconnected client");
+                Serial.println(F("BLE Reconnected client"));
             }
             /** We don't already have a client that knows this device,
          *  we will check for a client that is disconnected that we can use.
@@ -257,13 +259,13 @@ class BleRadio :
         {
             if (NimBLEDevice::getClientListSize() >= NIMBLE_MAX_CONNECTIONS)
             {
-                Serial.println("Max clients reached - no more connections available");
+                Serial.println(F("BLE Max clients reached - no more connections available"));
                 return false;
             }
 
             pClient = NimBLEDevice::createClient();
 
-            Serial.println("New client created");
+            Serial.println(F("BLE New client created"));
 
             pClient->setClientCallbacks((NimBLEClientCallbacks *)this, false);
             /** Set initial connection parameters: These settings are 15ms interval, 0 latency, 120ms timout.
@@ -279,7 +281,7 @@ class BleRadio :
             {
                 /** Created a client but failed to connect, don't need to keep it as it has no data */
                 NimBLEDevice::deleteClient(pClient);
-                Serial.println("Failed to connect, deleted client");
+                Serial.println(F("BLE Failed to connect, deleted client"));
                 return false;
             }
         }
@@ -288,14 +290,14 @@ class BleRadio :
         {
             if (!pClient->connect(m_advDevice))
             {
-                Serial.println("Failed to connect");
+                Serial.println(F("BLE Failed to connect"));
                 return false;
             }
         }
 
-        Serial.print("Connected to: ");
+        Serial.print(F("BLE Connected to: "));
         Serial.println(pClient->getPeerAddress().toString().c_str());
-        Serial.print("RSSI: ");
+        Serial.print(F("BLE RSSI: "));
         Serial.println(pClient->getRssi());
 
         /** Now we can read/write/subscribe the charateristics of the services we are interested in */
@@ -312,17 +314,18 @@ class BleRadio :
             { /** make sure it's not null */
                 if (pChr->canRead())
                 {
+                    Serial.print(F("BLE "));
                     Serial.print(pChr->getUUID().toString().c_str());
-                    Serial.print(" Value: ");
+                    Serial.print(F(" Value: "));
                     Serial.println(pChr->readValue().c_str());
                 }
 
                 pDsc = pChr->getDescriptor(NimBLEUUID("C01D"));
                 if (pDsc)
                 { /** make sure it's not null */
-                    Serial.print("Descriptor: ");
+                    Serial.print(F("BLE Descriptor: "));
                     Serial.print(pDsc->getUUID().toString().c_str());
-                    Serial.print(" Value: ");
+                    Serial.print(F("BLE  Value: "));
                     Serial.println(pDsc->readValue().c_str());
                 }
 
@@ -330,7 +333,7 @@ class BleRadio :
                 {
                     if (pChr->writeValue("No tip!"))
                     {
-                        Serial.print("Wrote new value to: ");
+                        Serial.print(F("BLE Wrote new value to: "));
                         Serial.println(pChr->getUUID().toString().c_str());
                     }
                     else
@@ -342,9 +345,9 @@ class BleRadio :
 
                     if (pChr->canRead())
                     {
-                        Serial.print("The value of: ");
+                        Serial.print(F("BLE The value of: "));
                         Serial.print(pChr->getUUID().toString().c_str());
-                        Serial.print(" is now: ");
+                        Serial.print(F(" is now: "));
                         Serial.println(pChr->readValue().c_str());
                     }
                 }
@@ -378,7 +381,7 @@ class BleRadio :
         }
         else
         {
-            Serial.println("Configuration service not found.");
+            Serial.println(F("BLE Configuration service not found."));
         }
 
         return true;
@@ -403,12 +406,12 @@ public:
     {
         if (!m_initialized)
         {
-            Serial.println("Radio not on");
+            Serial.println(F("BLE Radio not on"));
             return false;
         }
         NimBLEDevice::deinit(true);
         m_initialized = false;
-        Serial.println("Radio off");
+        Serial.println(F("BLE Radio off"));
         return true;
     }
     bool on(const char *deviceName, esp_power_level_t powerLevel = ESP_PWR_LVL_P9, bool activeScan = true, uint8_t authRec = BLE_SM_PAIR_AUTHREQ_SC)
@@ -417,7 +420,7 @@ public:
             deviceName = "";
         if (m_initialized)
         {
-            Serial.println("Radio already on");
+            Serial.println(F("BLE Radio already on"));
             return false;
         }
         NimBLEDevice::init(deviceName);
@@ -440,11 +443,11 @@ public:
         //NimBLEDevice::setSecurityAuth(false, false, true);
         NimBLEDevice::setSecurityAuth(authRec);
 
-        Serial.println("Creating session server");
+        Serial.println(F("BLE Creating session server"));
         m_server = NimBLEDevice::createServer();
         if (nullptr == m_server)
         {
-            Serial.println("Error session creating server");
+            Serial.println(F("BLE Error session creating server"));
             return false;
         }
         m_server->setCallbacks((NimBLEServerCallbacks *)this, false);
@@ -452,7 +455,7 @@ public:
         NimBLEService *pDeadService = m_server->createService(BLE_SESSION_SERVICE_ID);
         if (nullptr == pDeadService)
         {
-            Serial.println("Error creating session service");
+            Serial.println(F("BLE Error creating session service"));
             return false;
         }
         NimBLECharacteristic *pBeefCharacteristic = pDeadService->createCharacteristic(
@@ -479,7 +482,7 @@ public:
         /** Start the services when finished creating all Characteristics and Descriptors */
         if (!pDeadService->start())
         {
-            Serial.println("Error starting session service");
+            Serial.println(F("BLE Error starting session service"));
             return false;
         }
         
@@ -487,7 +490,7 @@ public:
         NimBLEAdvertising *pAdvertising = NimBLEDevice::getAdvertising();
         if (nullptr == pAdvertising)
         {
-            Serial.println("Error creating session advertising object");
+            Serial.println(F("BLE Error creating session advertising object"));
             return false;
         }
         /** Add the services to the advertisment data **/
@@ -499,17 +502,17 @@ public:
         pAdvertising->setScanResponse(true);
         if (!pAdvertising->start())
         {
-            Serial.println("Error starting advertising");
+            Serial.println(F("BLE Error starting advertising"));
             return false;
         }
 
-        Serial.println("Advertising Started");
+        Serial.println(F("BLE Advertising Started"));
 
         /** create new scan */
         NimBLEScan *pScan = NimBLEDevice::getScan();
         if (nullptr == pScan)
         {
-            Serial.println("Error creating scan object");
+            Serial.println(F("BLE Error creating scan object"));
             return false;
         }
         /** create a callback that gets called when advertisers are found */
@@ -528,11 +531,11 @@ public:
          */
         if (pScan->start(m_scanTime, onScanEnded))
         {
-            Serial.println("Scan started");
+            Serial.println(F("BLE Scan started"));
         }
         else
         {
-            Serial.println("Scan error");
+            Serial.println(F("BLE Scan error"));
             return false;
         }
         return true;
@@ -545,11 +548,11 @@ public:
             /** Found a device we want to connect to, do it now */
             if (connectToServer())
             {
-                Serial.println("Success! we should now be getting notifications, scanning for more!");
+                Serial.println(F("BLE Success! we should now be getting notifications, scanning for more!"));
             }
             else
             {
-                Serial.println("Failed to connect, starting scan");
+                Serial.println(F("BLE Failed to connect, starting scan"));
             }
 
             NimBLEDevice::getScan()->start(m_scanTime, onScanEnded);
